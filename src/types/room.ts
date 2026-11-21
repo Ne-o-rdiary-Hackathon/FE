@@ -13,7 +13,7 @@ export interface HomeRoom {
   invite_url: string;
 }
 
-export interface HomeRoomListResponse {
+export interface HomeRoomList {
   total_count: number;
   page: number;
   size: number;
