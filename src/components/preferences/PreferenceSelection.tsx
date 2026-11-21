@@ -10,8 +10,11 @@ import { cn } from "@/lib/utils";
 
 export const PreferenceSelection = () => {
   const router = useRouter();
-  const [step, setStep] = useState<"desired" | "bored">("desired");
-  const [categoryIndex, setCategoryIndex] = useState(0);
+  const [step, setStep] = useState<"desired" | "bored">("bored");
+  const [categoryIndexes, setCategoryIndexes] = useState({
+    desired: 0,
+    bored: 0,
+  });
   const [expanded, setExpanded] = useState({
     desired: [] as string[],
     bored: [] as string[],
@@ -20,13 +23,14 @@ export const PreferenceSelection = () => {
     desired: [] as string[],
     bored: [] as string[],
   });
+  const categoryIndex = categoryIndexes[step];
   const category = ACTIVITY_CATEGORIES[categoryIndex];
   const selected = selections[step];
   const isDesired = step === "desired";
 
   useEffect(() => {
     const handleHistoryChange = () => {
-      setStep(window.location.hash === "#bored" ? "bored" : "desired");
+      setStep(window.location.hash === "#desired" ? "desired" : "bored");
     };
 
     handleHistoryChange();
@@ -35,8 +39,8 @@ export const PreferenceSelection = () => {
   }, []);
 
   const handleBack = () => {
-    if (!isDesired) {
-      if (window.history.state?.preferenceStep === "bored") {
+    if (isDesired) {
+      if (window.history.state?.preferenceStep === "desired") {
         window.history.back();
       } else {
         window.history.replaceState(
@@ -44,7 +48,7 @@ export const PreferenceSelection = () => {
           "",
           window.location.pathname + window.location.search
         );
-        setStep("desired");
+        setStep("bored");
       }
       return;
     }
@@ -52,13 +56,12 @@ export const PreferenceSelection = () => {
     else router.push("/");
   };
   const handleCategory = (index: number) => {
-    setCategoryIndex(index);
+    setCategoryIndexes((previous) => ({ ...previous, [step]: index }));
   };
   const handleNext = () => {
-    if (isDesired) {
-      window.history.pushState({ preferenceStep: "bored" }, "", "#bored");
-      setStep("bored");
-      setCategoryIndex(0);
+    if (!isDesired) {
+      window.history.pushState({ preferenceStep: "desired" }, "", "#desired");
+      setStep("desired");
       window.scrollTo(0, 0);
     } else {
       router.push("/invitation");
@@ -67,7 +70,7 @@ export const PreferenceSelection = () => {
 
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">
-      <header className="pt-4">
+      <header className="bg-bg-normal sticky top-0 z-20 pt-4">
         <div className="flex h-11 items-center gap-1">
           <button
             type="button"
@@ -92,18 +95,23 @@ export const PreferenceSelection = () => {
                 alt=""
               />
             ) : (
-              <span aria-hidden="true">🙅‍♂️</span>
+              <Image
+                src="/icons/preferences/bored-activity-title.svg"
+                width={133}
+                height={21}
+                alt="하기 싫은 활동"
+              />
             )}
-            {isDesired ? "하고 싶은 활동" : "하기 싫은 활동"}{" "}
+            {isDesired && "하고 싶은 활동"}{" "}
             <span className="text-primary-normal">
-              {isDesired ? "1/2" : "2/2"}
+              {isDesired ? "2/2" : "1/2"}
             </span>
           </h1>
         </div>
         <p className="body5 text-text-secondary-2 pr-4 pl-9.5">
           {isDesired
             ? "친구들과 새롭게 하고 싶은 활동을 모두 골라주세요. (중복 선택)"
-            : "평소 지루하게 느껴지는 활동을 자유롭게 골라주세요."}
+            : "평소 지루하게 느껴지는 활동을 자유롭게 골라주세요. (다중 선택)"}
         </p>
         <nav
           aria-label="활동 카테고리"
@@ -242,7 +250,7 @@ export const PreferenceSelection = () => {
           onClick={handleNext}
           className="body3 rounded-8 bg-primary-normal focus-visible:outline-primary-normal min-h-13 w-full px-4 font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
-          {isDesired
+          {!isDesired
             ? `다음 (총 ${selected.length}개 항목 반영)`
             : `선택 완료 (총 ${selected.length}개 항목 반영)`}
         </button>
