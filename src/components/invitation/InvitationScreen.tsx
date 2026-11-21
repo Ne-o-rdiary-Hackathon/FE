@@ -54,7 +54,7 @@ export const InvitationScreen = () => {
       <header className="relative flex h-13 shrink-0 items-center justify-center px-5">
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/home")}
           aria-label="초대장 닫기"
           className="focus-visible:outline-primary-normal absolute left-5 flex size-8 items-center justify-center text-lg font-semibold focus-visible:outline-2"
         >
