@@ -5,18 +5,30 @@ import { useMemo, useState } from "react";
 import { RoomActionButton } from "@/components/rooms/RoomActionButton";
 import { RoomCard } from "@/components/rooms/RoomCard";
 import { RoomStatusFilters } from "@/components/rooms/RoomStatusFilters";
+import { RoomsEmptyState } from "@/components/rooms/RoomsEmptyState";
 import { RoomsHeader } from "@/components/rooms/RoomsHeader";
 import { useMeQuery } from "@/hooks/auth/useMeQuery";
 import { useInfiniteScroll } from "@/hooks/common/useInfiniteScroll";
-import { homeRoomsResponse } from "@/mocks/homeRooms";
-import type { RoomFilter } from "@/types/room";
+import { useRoomsQuery } from "@/hooks/rooms/useRoomsQuery";
+import type { HomeRoomListParams, RoomFilter } from "@/types/room";
 
-const { rooms, total_count: totalCount } = homeRoomsResponse.data;
+const ROOM_LIST_PARAMS: HomeRoomListParams = {
+  status: "ALL",
+  page: 1,
+  size: 10,
+};
 
 const ROOMS_PAGE_SIZE = 4;
 
 const RoomsPage = () => {
   const { data: me } = useMeQuery();
+  const {
+    data: roomList,
+    isPending,
+    isError,
+  } = useRoomsQuery(ROOM_LIST_PARAMS);
+  const rooms = useMemo(() => roomList?.rooms ?? [], [roomList]);
+  const totalCount = roomList?.total_count ?? 0;
   const [activeFilter, setActiveFilter] = useState<RoomFilter>("ALL");
   const [visibleCount, setVisibleCount] = useState(ROOMS_PAGE_SIZE);
 
@@ -25,7 +37,7 @@ const RoomsPage = () => {
       activeFilter === "ALL"
         ? rooms
         : rooms.filter((room) => room.status === activeFilter),
-    [activeFilter]
+    [activeFilter, rooms]
   );
 
   const visibleRooms = filteredRooms.slice(0, visibleCount);
@@ -64,6 +76,19 @@ const RoomsPage = () => {
         />
 
         <div className="mt-5 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto pb-28">
+          {isPending && (
+            <p className="body3 text-text-secondary-2">
+              방 목록을 불러오고 있어요...
+            </p>
+          )}
+          {isError && (
+            <p className="body3 text-text-secondary-2">
+              방 목록을 불러오지 못했어요.
+            </p>
+          )}
+          {!isPending && !isError && filteredRooms.length === 0 && (
+            <RoomsEmptyState />
+          )}
           {visibleRooms.map((room) => (
             <RoomCard key={room.room_id} room={room} />
           ))}
