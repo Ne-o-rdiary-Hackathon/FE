@@ -1,8 +1,5 @@
 // API 연동 전 빙고 화면에 사용하는 예시 데이터입니다.
 export const MOCK_BINGO = {
-  roomName: "퇴근 후 도파민 수혈단",
-  memberCount: 4,
-  targetBingo: 3,
   activities: [
     ["한강 야외", "러닝"],
     ["방탈출", "테마 클리어"],

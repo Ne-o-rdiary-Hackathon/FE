@@ -6,29 +6,27 @@ import Link from "next/link";
 
 import { MOCK_BINGO } from "@/mocks/bingo";
 import { getCompletedLines } from "@/lib/bingo/lines";
+import { EMPTY_ROOM_PHOTOS, useBingoStore } from "@/stores/bingo";
+import type { HomeRoom } from "@/types/room";
 import { PhotoEditor } from "./PhotoEditor";
 
-export const BingoScreen = () => {
+export const BingoScreen = ({ room }: { room: HomeRoom }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<{ file: File; cellIndex: number } | null>(
     null
   );
-  const [photos, setPhotos] = useState<Record<number, string>>({});
-  const photoUrls = useRef<string[]>([]);
-  const selectedCellRef = useRef<HTMLDivElement>(null);
-  useEffect(
-    () => () => photoUrls.current.forEach((url) => URL.revokeObjectURL(url)),
-    []
+  const photos = useBingoStore(
+    (state) => state.photosByRoom[room.room_id] ?? EMPTY_ROOM_PHOTOS
   );
+  const addPhoto = useBingoStore((state) => state.addPhoto);
+  const selectedCellRef = useRef<HTMLDivElement>(null);
   const completedLines = getCompletedLines(
     new Set(Object.keys(photos).map(Number))
   );
 
   const handleComplete = (blob: Blob) => {
     if (!draft || photos[draft.cellIndex]) return;
-    const url = URL.createObjectURL(blob);
-    photoUrls.current.push(url);
-    setPhotos((current) => ({ ...current, [draft.cellIndex]: url }));
+    addPhoto(room.room_id, draft.cellIndex, blob);
     setDraft(null);
   };
 
@@ -86,8 +84,8 @@ export const BingoScreen = () => {
             className="rotate-180"
           />
         </Link>
-        <h1 className="body1 leading-[normal] font-bold tracking-[-0.02em]">
-          {MOCK_BINGO.roomName}
+        <h1 className="body1 mx-10 truncate leading-[normal] font-bold tracking-[-0.02em]">
+          {room.room_name}
         </h1>
         <span
           aria-hidden="true"
@@ -105,7 +103,7 @@ export const BingoScreen = () => {
           <p className="body4 font-bold">
             달성 현황{" "}
             <span className="text-primary-normal">
-              {completedLines.length} / {MOCK_BINGO.targetBingo} 빙고
+              {completedLines.length} / {room.target_bingo} 빙고
             </span>
           </p>
           <p className="text-bingo-muted text-xs leading-[1.4] tracking-[-0.025em]">
@@ -124,38 +122,46 @@ export const BingoScreen = () => {
       >
         <div className="mx-auto flex max-w-[22.5rem] items-center justify-between px-0.5 py-1">
           <h2 className="body5 font-bold">
-            함께하는 멤버 ({MOCK_BINGO.memberCount}명)
+            함께하는 멤버 ({room.current_members}명)
           </h2>
         </div>
-        <div className="relative mx-auto mt-2.5 grid max-w-[22.75rem] grid-cols-3 gap-x-2 gap-y-3">
+        <div className="relative mx-auto mt-2.5 grid max-w-[22.75rem] grid-cols-3 gap-3">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 gap-x-2 gap-y-3"
+            className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 gap-3"
           >
-            {completedLines.map((line) => {
-              const horizontal = line[1] - line[0] === 1;
-              const vertical = line[1] - line[0] === 3;
-              const position = horizontal
-                ? [
-                    "col-span-3 row-start-1",
-                    "col-span-3 row-start-2",
-                    "col-span-3 row-start-3",
-                  ][Math.floor(line[0] / 3)]
-                : vertical
+            {Object.keys(photos).length === 9 ? (
+              <div className="bingo-line bingo-line-full absolute -inset-2" />
+            ) : (
+              completedLines.map((line) => {
+                const horizontal = line[1] - line[0] === 1;
+                const vertical = line[1] - line[0] === 3;
+                const position = horizontal
                   ? [
-                      "row-span-3 col-start-1",
-                      "row-span-3 col-start-2",
-                      "row-span-3 col-start-3",
-                    ][line[0]]
-                  : "col-span-3 row-span-3";
-              return (
-                <div key={line.join("-")} className={`relative ${position}`}>
-                  <div
-                    className={`bingo-line ${!horizontal && !vertical ? (line[0] === 0 ? "bingo-line-diagonal" : "bingo-line-diagonal-reverse") : "absolute -inset-2"}`}
-                  />
-                </div>
-              );
-            })}
+                      "col-start-1 col-span-3 row-start-1",
+                      "col-start-1 col-span-3 row-start-2",
+                      "col-start-1 col-span-3 row-start-3",
+                    ][Math.floor(line[0] / 3)]
+                  : vertical
+                    ? [
+                        "row-start-1 row-span-3 col-start-1",
+                        "row-start-1 row-span-3 col-start-2",
+                        "row-start-1 row-span-3 col-start-3",
+                      ][line[0]]
+                    : "col-start-1 col-span-3 row-start-1 row-span-3";
+                return (
+                  <div key={line.join("-")} className={`relative ${position}`}>
+                    <div
+                      className={
+                        !horizontal && !vertical
+                          ? `bingo-line-diagonal absolute -inset-2 ${line[0] === 0 ? "-scale-x-100" : ""}`
+                          : "bingo-line absolute -inset-2"
+                      }
+                    />
+                  </div>
+                );
+              })
+            )}
           </div>
           {MOCK_BINGO.activities.map((activity, index) => (
             <div
@@ -170,7 +176,7 @@ export const BingoScreen = () => {
                 onClick={() =>
                   setSelectedIndex(selectedIndex === index ? null : index)
                 }
-                className={`bg-bingo-cell text-primary-darker @container relative flex aspect-[116/112] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl text-center ${selectedIndex === index ? "ring-primary-normal ring-1 ring-inset" : ""}`}
+                className={`bg-bingo-cell text-primary-darker @container relative flex aspect-[340/337] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl text-center ${selectedIndex === index ? "ring-primary-normal ring-1 ring-inset" : ""}`}
               >
                 {photos[index] && (
                   <>
@@ -188,7 +194,7 @@ export const BingoScreen = () => {
                 {completedLines.some((line) =>
                   line.some((cell) => cell === index)
                 ) && (
-                  <span className="text-primary-normal absolute top-[min(0.625rem,8.62cqw)] z-10 rounded-[min(0.25rem,3.45cqw)] bg-white/90 px-[min(0.375rem,5.17cqw)] py-[min(0.125rem,1.72cqw)] text-[min(0.625rem,8.62cqw)] leading-[1.4] font-semibold tracking-[-0.025em]">
+                  <span className="text-primary-normal absolute top-[min(0.625rem,8.82cqw)] z-10 rounded-[min(0.25rem,3.53cqw)] bg-white/90 px-[min(0.375rem,5.29cqw)] py-[min(0.125rem,1.76cqw)] text-[min(0.625rem,8.82cqw)] leading-[1.4] font-semibold tracking-[-0.025em]">
                     BINGO!
                   </span>
                 )}
