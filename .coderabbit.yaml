@@ -12,6 +12,9 @@ reviews:
   path_filters:
     - "!**/node_modules/**"
     - "!pnpm-lock.yaml"
+    - "!**/package-lock.json"
+    - "!**/receipts/**"
+    - "!**/review-receipts/**"
     - "!.husky/**"
     - "!**/*.woff"
     - "!**/*.woff2"
