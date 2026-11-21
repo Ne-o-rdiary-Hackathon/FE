@@ -45,6 +45,8 @@
   --color-bingo-summary: #f8f8fa;
   --color-bingo-cell: #fff1eb;
   --color-bingo-muted: #666666;
+  --color-bingo-menu: rgb(231 231 231 / 80%);
+  --color-bingo-menu-divider: #acabab;
 
   /* border */
   --color-border-1: #e9e9ea;
