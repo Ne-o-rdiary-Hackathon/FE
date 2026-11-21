@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +10,6 @@ import { useActivitiesQuery } from "@/hooks/activities/useActivitiesQuery";
 import { useSubmitActivitiesMutation } from "@/hooks/activities/useSubmitActivitiesMutation";
 import { useCreateBingoBoardMutation } from "@/hooks/rooms/useCreateBingoBoardMutation";
 import { useCreateRoomMutation } from "@/hooks/rooms/useCreateRoomMutation";
-import { HttpError } from "@/lib/api/http-error";
 import { getSubmissionErrorMessage } from "@/lib/preferences/errors";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
@@ -26,6 +25,9 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
   const submission = useSubmitActivitiesMutation();
   const createRoomMutation = useCreateRoomMutation();
   const createBingoBoardMutation = useCreateBingoBoardMutation();
+  const [generationRoomId, setGenerationRoomId] = useState<number | null>(null);
+  const submitLock = useRef(false);
+  const generationLock = useRef(false);
   const roomDraft = useCreateRoomStore((state) => state.draft);
   const createdRoom = useCreateRoomStore((state) => state.createdRoom);
   const setCreatedRoom = useCreateRoomStore((state) => state.setCreatedRoom);
@@ -83,13 +85,26 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
   const handleCategory = (index: number) => {
     setCategoryIndexes((previous) => ({ ...previous, [step]: index }));
   };
+  const handleGenerate = async (targetRoomId: number) => {
+    if (generationLock.current) return;
+    generationLock.current = true;
+    try {
+      await createBingoBoardMutation.mutateAsync(targetRoomId);
+      router.replace(`/rooms/${targetRoomId}`);
+    } catch {
+      // 제출 완료 상태를 유지하며 생성만 재시도할 수 있다.
+    } finally {
+      generationLock.current = false;
+    }
+  };
   const handleNext = async () => {
     if (!isDesired) {
       window.history.pushState({ preferenceStep: "desired" }, "", "#desired");
       setStep("desired");
       window.scrollTo(0, 0);
     } else {
-      if (isSubmitting) return;
+      if (isSubmitting || submitLock.current) return;
+      submitLock.current = true;
       try {
         let targetRoomId = roomId;
         if (targetRoomId === null && roomDraft) {
@@ -117,21 +132,51 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
           return;
         }
 
-        // 마지막 참여자가 제출하면 빙고판을 만든다.
-        try {
-          await createBingoBoardMutation.mutateAsync(targetRoomId);
-          router.replace(`/rooms/${targetRoomId}`);
-        } catch (error) {
-          // 409: 이미 빙고판이 있음. 그 외 실패는 홈에서 다시 확인한다.
-          const isAlreadyCreated =
-            error instanceof HttpError && error.status === 409;
-          router.replace(isAlreadyCreated ? `/rooms/${targetRoomId}` : "/home");
-        }
+        setGenerationRoomId(targetRoomId);
+        await handleGenerate(targetRoomId);
       } catch {
         // Preserve selections for retry.
+      } finally {
+        submitLock.current = false;
       }
     }
   };
+
+  if (generationRoomId !== null) {
+    return (
+      <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col items-center justify-center gap-4 px-5 text-center">
+        <p className="body2">활동 선택이 제출됐어요.</p>
+        {createBingoBoardMutation.isError ? (
+          <p role="alert" className="body3">
+            빙고판을 준비하지 못했어요. 다시 시도해 주세요.
+          </p>
+        ) : (
+          <output className="body3">빙고판을 준비하고 있어요.</output>
+        )}
+        <BottomButton
+          disabled={
+            createBingoBoardMutation.isPending ||
+            createBingoBoardMutation.isSuccess
+          }
+          onClick={() => {
+            void handleGenerate(generationRoomId);
+          }}
+        >
+          {createBingoBoardMutation.isPending
+            ? "빙고판 준비 중..."
+            : "빙고판 생성 다시 시도"}
+        </BottomButton>
+        <button
+          type="button"
+          disabled={createBingoBoardMutation.isPending}
+          onClick={() => router.replace("/home")}
+          className="body3 text-primary-normal"
+        >
+          홈으로
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">
