@@ -60,6 +60,8 @@ export const PreferenceSelection = () => {
       setStep("bored");
       setCategoryIndex(0);
       window.scrollTo(0, 0);
+    } else {
+      router.push("/invitation");
     }
   };
 
