@@ -6,11 +6,20 @@ import { useRouter } from "next/navigation";
 
 import { BottomButton } from "@/components/common/BottomButton";
 import { Chip } from "@/components/common/Chip";
-import { ACTIVITY_CATEGORIES } from "@/constants/activities";
+import { useActivitiesQuery } from "@/hooks/activities/useActivitiesQuery";
+import { useSubmitActivitiesMutation } from "@/hooks/activities/useSubmitActivitiesMutation";
+import { getSubmissionErrorMessage } from "@/lib/preferences/errors";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
 
-export const PreferenceSelection = () => {
+export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useActivitiesQuery();
+  const submission = useSubmitActivitiesMutation();
   const router = useRouter();
   const [step, setStep] = useState<"desired" | "bored">("bored");
   const [categoryIndexes, setCategoryIndexes] = useState({
@@ -22,11 +31,11 @@ export const PreferenceSelection = () => {
     bored: [] as string[],
   });
   const [selections, setSelections] = useState({
-    desired: [] as string[],
-    bored: [] as string[],
+    desired: [] as number[],
+    bored: [] as number[],
   });
   const categoryIndex = categoryIndexes[step];
-  const category = ACTIVITY_CATEGORIES[categoryIndex];
+  const category = categories[categoryIndex];
   const selected = selections[step];
   const isDesired = step === "desired";
 
@@ -60,15 +69,35 @@ export const PreferenceSelection = () => {
   const handleCategory = (index: number) => {
     setCategoryIndexes((previous) => ({ ...previous, [step]: index }));
   };
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!isDesired) {
       window.history.pushState({ preferenceStep: "desired" }, "", "#desired");
       setStep("desired");
       window.scrollTo(0, 0);
     } else {
-      router.push("/invitation");
+      if (!roomId || submission.isPending) return;
+      try {
+        await submission.mutateAsync({
+          roomId,
+          body: {
+            desired_activity_ids: selections.desired,
+            bored_activity_ids: selections.bored,
+          },
+        });
+      } catch {
+        // Preserve selections for retry.
+      }
     }
   };
+
+  if (submission.isSuccess) {
+    return (
+      <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col justify-center gap-6 px-5">
+        <p>활동 선택을 제출했습니다.</p>
+        <BottomButton onClick={() => router.push("/home")}>홈으로</BottomButton>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">
@@ -119,9 +148,9 @@ export const PreferenceSelection = () => {
           aria-label="활동 카테고리"
           className="border-border-1 mt-2 flex [scrollbar-width:none] overflow-x-auto border-b px-5"
         >
-          {ACTIVITY_CATEGORIES.map((item, index) => (
+          {categories.map((item, index) => (
             <button
-              key={item.name}
+              key={item.category_id}
               type="button"
               aria-current={categoryIndex === index ? "true" : undefined}
               onClick={() => handleCategory(index)}
@@ -132,20 +161,37 @@ export const PreferenceSelection = () => {
                   : "border-transparent text-text-primary"
               )}
             >
-              {item.label}
+              {item.category_name}
             </button>
           ))}
         </nav>
       </header>
       <div className="flex-1 px-6.5 pt-1 pb-28">
-        {category.groups.map((group) => {
-          const groupKey = `${category.name}:${group.name}`;
+        {isLoading && <output>활동 목록을 불러오는 중입니다.</output>}
+        {isError && (
+          <div role="alert">
+            <p>활동 목록을 불러오지 못했습니다.</p>
+            <button type="button" onClick={() => refetch()}>
+              다시 시도
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && categories.length === 0 && (
+          <p>등록된 활동이 없습니다.</p>
+        )}
+        {category?.subcategories.map((group) => {
+          const groupKey = `${category.category_id}:${group.category_id}`;
           const isExpanded = expanded[step].includes(groupKey);
-          const isAllSelected = group.activities.every((id) =>
-            selected.includes(id)
-          );
+          const isAllSelected =
+            group.activities.length > 0 &&
+            group.activities.every((activity) =>
+              selected.includes(activity.activity_id)
+            );
           return (
-            <section key={group.name} className="border-border-1 border-b">
+            <section
+              key={group.category_id}
+              className="border-border-1 border-b"
+            >
               <button
                 type="button"
                 aria-expanded={isExpanded}
@@ -158,7 +204,7 @@ export const PreferenceSelection = () => {
                 className="focus-visible:outline-primary-normal flex min-h-18.5 w-full items-center justify-between text-left focus-visible:outline-2"
               >
                 <span className="text-lg leading-[1.4] font-semibold tracking-tight">
-                  {group.name}
+                  {group.category_name}
                 </span>
                 <Image
                   src="/icons/preferences/expand.svg"
@@ -184,17 +230,19 @@ export const PreferenceSelection = () => {
                   <div className="pt-1 pb-4">
                     <div className="flex flex-wrap gap-x-1 gap-y-2">
                       {group.activities.map((activity) => {
-                        const isSelected = selected.includes(activity);
+                        const isSelected = selected.includes(
+                          activity.activity_id
+                        );
                         return (
                           <Chip
-                            key={activity}
+                            key={activity.activity_id}
                             isSelected={isSelected}
                             onClick={() =>
                               setSelections((previous) => ({
                                 ...previous,
                                 [step]: toggleActivity(
                                   previous[step],
-                                  activity
+                                  activity.activity_id
                                 ),
                               }))
                             }
@@ -205,7 +253,7 @@ export const PreferenceSelection = () => {
                                 : "body2 border-border-2 text-text-secondary-2"
                             )}
                           >
-                            {activity}
+                            {activity.activity_name}
                           </Chip>
                         );
                       })}
@@ -216,7 +264,12 @@ export const PreferenceSelection = () => {
                       onClick={() =>
                         setSelections((previous) => ({
                           ...previous,
-                          [step]: toggleGroup(previous[step], group.activities),
+                          [step]: toggleGroup(
+                            previous[step],
+                            group.activities.map(
+                              (activity) => activity.activity_id
+                            )
+                          ),
                         }))
                       }
                       className={cn(
@@ -246,10 +299,24 @@ export const PreferenceSelection = () => {
         })}
       </div>
       <div className="border-border-1 bg-bg-normal sticky bottom-0 border-t px-5 pt-4 pb-6">
-        <BottomButton onClick={handleNext}>
-          {!isDesired
-            ? `다음 (총 ${selected.length}개 항목 반영)`
-            : `선택 완료 (총 ${selected.length}개 항목 반영)`}
+        {submission.isError && (
+          <p role="alert">{getSubmissionErrorMessage(submission.error)}</p>
+        )}
+        <BottomButton
+          onClick={handleNext}
+          disabled={
+            isLoading ||
+            isError ||
+            categories.length === 0 ||
+            submission.isPending ||
+            (isDesired && !roomId)
+          }
+        >
+          {submission.isPending
+            ? "제출 중..."
+            : !isDesired
+              ? `다음 (총 ${selected.length}개 항목 반영)`
+              : `선택 완료 (총 ${selected.length}개 항목 반영)`}
         </BottomButton>
       </div>
     </main>
