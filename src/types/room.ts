@@ -45,3 +45,23 @@ export type RoomCreateResponse = {
   status: RoomStatus;
   invite_url: string;
 };
+
+export type InviteRoomInfo = {
+  room_id: number;
+  room_name: string;
+  status: RoomStatus;
+  current_members: number;
+  max_members: number;
+  target_bingo: number;
+  achieved_bingo: number;
+  can_join: boolean;
+};
+
+export type InviteValidationResponse = {
+  valid: boolean;
+  room: InviteRoomInfo | null;
+};
+
+export type RoomJoinResponse = {
+  room_id: number;
+};

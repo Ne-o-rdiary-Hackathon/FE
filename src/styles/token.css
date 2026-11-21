@@ -26,6 +26,7 @@
 
   /* red (error, destructive) */
   --color-red-normal: #d92d20;
+  --color-red-error: #fb5967;
 
   /* neutral */
   --white: #ffffff;

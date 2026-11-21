@@ -8,7 +8,9 @@ import { BottomButton } from "@/components/common/BottomButton";
 import { Chip } from "@/components/common/Chip";
 import { useActivitiesQuery } from "@/hooks/activities/useActivitiesQuery";
 import { useSubmitActivitiesMutation } from "@/hooks/activities/useSubmitActivitiesMutation";
+import { useCreateBingoBoardMutation } from "@/hooks/rooms/useCreateBingoBoardMutation";
 import { useCreateRoomMutation } from "@/hooks/rooms/useCreateRoomMutation";
+import { HttpError } from "@/lib/api/http-error";
 import { getSubmissionErrorMessage } from "@/lib/preferences/errors";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
@@ -23,11 +25,15 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
   } = useActivitiesQuery();
   const submission = useSubmitActivitiesMutation();
   const createRoomMutation = useCreateRoomMutation();
+  const createBingoBoardMutation = useCreateBingoBoardMutation();
   const roomDraft = useCreateRoomStore((state) => state.draft);
   const createdRoom = useCreateRoomStore((state) => state.createdRoom);
   const setCreatedRoom = useCreateRoomStore((state) => state.setCreatedRoom);
   const isCreatingRoom = roomId === null && roomDraft !== null;
-  const isSubmitting = submission.isPending || createRoomMutation.isPending;
+  const isSubmitting =
+    submission.isPending ||
+    createRoomMutation.isPending ||
+    createBingoBoardMutation.isPending;
   const router = useRouter();
   const [step, setStep] = useState<"desired" | "bored">("bored");
   const [categoryIndexes, setCategoryIndexes] = useState({
@@ -95,28 +101,37 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
         }
         if (targetRoomId === null) return;
 
-        await submission.mutateAsync({
+        const result = await submission.mutateAsync({
           roomId: targetRoomId,
           body: {
             desired_activity_ids: selections.desired,
             bored_activity_ids: selections.bored,
           },
         });
-        if (isCreatingRoom) router.replace("/invitation");
+        if (isCreatingRoom) {
+          router.replace("/invitation");
+          return;
+        }
+        if (!result.all_members_submitted) {
+          router.replace("/home");
+          return;
+        }
+
+        // 마지막 참여자가 제출하면 빙고판을 만든다.
+        try {
+          await createBingoBoardMutation.mutateAsync(targetRoomId);
+          router.replace(`/rooms/${targetRoomId}`);
+        } catch (error) {
+          // 409: 이미 빙고판이 있음. 그 외 실패는 홈에서 다시 확인한다.
+          const isAlreadyCreated =
+            error instanceof HttpError && error.status === 409;
+          router.replace(isAlreadyCreated ? `/rooms/${targetRoomId}` : "/home");
+        }
       } catch {
         // Preserve selections for retry.
       }
     }
   };
-
-  if (submission.isSuccess && !isCreatingRoom) {
-    return (
-      <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col justify-center gap-6 px-5">
-        <p>활동 선택을 제출했습니다.</p>
-        <BottomButton onClick={() => router.push("/home")}>홈으로</BottomButton>
-      </main>
-    );
-  }
 
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">

@@ -4,4 +4,5 @@ export const roomKeys = {
   all: ["rooms"] as const,
   lists: () => [...roomKeys.all, "list"] as const,
   list: (params: HomeRoomListParams) => [...roomKeys.lists(), params] as const,
+  invite: (code: string) => [...roomKeys.all, "invite", code] as const,
 };
