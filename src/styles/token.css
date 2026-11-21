@@ -1,0 +1,109 @@
+@theme inline {
+  /* fonts */
+  --font-pretendard: var(--font-pretendard);
+}
+
+@theme {
+  /* text */
+  --color-text-title: #1f2124;
+  --color-text-primary: #101112;
+  --color-text-secondary-1: #4b4b4b;
+  --color-text-secondary-2: #858894;
+  --color-text-disable: #cacaca;
+  --color-text-white: #ffffff;
+
+  /* primary palette (Orange) */
+  --color-primary-light: #ffefe8;
+  --color-primary-light-hover: #ffe7dc;
+  --color-primary-light-active: #ffceb7;
+  --color-primary-normal: #ff6118;
+  --color-primary-normal-hover: #e65716;
+  --color-primary-normal-active: #cc4e13;
+  --color-primary-dark: #bf4912;
+  --color-primary-dark-hover: #993a0e;
+  --color-primary-dark-active: #732c0b;
+  --color-primary-darker: #592208;
+
+  /* neutral */
+  --white: #ffffff;
+  --color-gray-1: #e9e9ea;
+  --color-gray-2: #dedefe;
+  --color-gray-3: #bbbcbd;
+  --color-gray-4: #25262a;
+  --color-gray-5: #212226;
+  --color-gray-6: #1e1e22;
+  --color-gray-7: #1c1d20;
+  --color-gray-8: #161719;
+  --black: #000000;
+
+  /* bg */
+  --color-bg-gray: #f6f7f9;
+  --color-bg-normal: #ffffff;
+
+  /* border */
+  --color-border-1: #e9e9ea;
+  --color-border-2: #bbbcbd;
+  --color-border-3: #ff6118;
+  --color-border-4: #3dbaff;
+
+  /* radius */
+  --radius-4: 0.25rem;
+  --radius-8: 0.5rem;
+  --radius-16: 1rem;
+  --radius-20: 1.25rem;
+  --radius-pill: 9999px;
+}
+
+@layer components {
+  /* typography (Header) */
+  .h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+
+  /* typography (Body) */
+  .body1 {
+    font-size: 1.0625rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .body2 {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .body3 {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .body4 {
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+  .body5 {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.025em;
+  }
+}
