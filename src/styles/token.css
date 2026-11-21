@@ -24,6 +24,9 @@
   --color-primary-dark-active: #732c0b;
   --color-primary-darker: #592208;
 
+  /* red (error, destructive) */
+  --color-red-normal: #d92d20;
+
   /* neutral */
   --white: #ffffff;
   --color-gray-1: #e9e9ea;
@@ -39,6 +42,13 @@
   /* bg */
   --color-bg-gray: #f6f7f9;
   --color-bg-normal: #ffffff;
+  --color-bingo-summary: #f8f8fa;
+  --color-bingo-cell: #fff1eb;
+  --color-bingo-muted: #666666;
+  --color-bingo-menu: rgb(231 231 231 / 80%);
+  --color-bingo-menu-divider: #acabab;
+  --color-bingo-line: rgb(255 206 183 / 44%);
+  --color-bingo-line-border: rgb(255 97 24 / 80%);
 
   /* border */
   --color-border-1: #e9e9ea;
