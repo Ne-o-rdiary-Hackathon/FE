@@ -55,7 +55,7 @@ export const PreferenceSelection = () => {
       return;
     }
     if (window.history.length > 1) router.back();
-    else router.push("/");
+    else router.push("/home");
   };
   const handleCategory = (index: number) => {
     setCategoryIndexes((previous) => ({ ...previous, [step]: index }));
