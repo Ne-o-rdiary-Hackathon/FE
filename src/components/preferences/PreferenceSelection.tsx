@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { BottomButton } from "@/components/common/BottomButton";
+import { Chip } from "@/components/common/Chip";
 import { ACTIVITY_CATEGORIES } from "@/constants/activities";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
@@ -114,7 +116,7 @@ export const PreferenceSelection = () => {
               aria-current={categoryIndex === index ? "true" : undefined}
               onClick={() => handleCategory(index)}
               className={cn(
-                "body2 min-w-17 shrink-0 border-b-2 px-2 py-2.5 font-semibold whitespace-nowrap",
+                "body2 font-semibold min-w-17 shrink-0 border-b-2 px-2 py-2.5 whitespace-nowrap",
                 categoryIndex === index
                   ? "border-primary-normal text-primary-normal"
                   : "border-transparent text-text-primary"
@@ -174,10 +176,9 @@ export const PreferenceSelection = () => {
                       {group.activities.map((activity) => {
                         const isSelected = selected.includes(activity);
                         return (
-                          <button
+                          <Chip
                             key={activity}
-                            type="button"
-                            aria-pressed={isSelected}
+                            isSelected={isSelected}
                             onClick={() =>
                               setSelections((previous) => ({
                                 ...previous,
@@ -188,14 +189,14 @@ export const PreferenceSelection = () => {
                               }))
                             }
                             className={cn(
-                              "body2 min-h-9.5 touch-manipulation rounded-pill border px-4 font-medium focus-visible:outline-2 focus-visible:outline-primary-normal",
+                              "min-h-9.5 touch-manipulation rounded-pill px-4 focus-visible:outline-2 focus-visible:outline-primary-normal",
                               isSelected
-                                ? "border-primary-light bg-primary-light font-medium text-primary-normal"
-                                : "border-border-2 bg-bg-normal text-text-secondary-2"
+                                ? "body2 font-medium border-primary-light"
+                                : "body2 border-border-2 text-text-secondary-2"
                             )}
                           >
                             {activity}
-                          </button>
+                          </Chip>
                         );
                       })}
                     </div>
@@ -209,7 +210,7 @@ export const PreferenceSelection = () => {
                         }))
                       }
                       className={cn(
-                        "body3 mt-4 flex items-center gap-2 font-medium focus-visible:outline-2 focus-visible:outline-primary-normal",
+                        "body3 font-medium mt-4 flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-primary-normal",
                         isAllSelected
                           ? "text-primary-normal"
                           : "text-text-secondary-2"
@@ -235,15 +236,11 @@ export const PreferenceSelection = () => {
         })}
       </div>
       <div className="border-border-1 bg-bg-normal sticky bottom-0 border-t px-5 pt-4 pb-6">
-        <button
-          type="button"
-          onClick={handleNext}
-          className="body3 rounded-8 bg-primary-normal focus-visible:outline-primary-normal min-h-13 w-full px-4 font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
-        >
+        <BottomButton onClick={handleNext}>
           {isDesired
             ? `다음 (총 ${selected.length}개 항목 반영)`
             : `선택 완료 (총 ${selected.length}개 항목 반영)`}
-        </button>
+        </BottomButton>
       </div>
     </main>
   );

@@ -1,3 +1,4 @@
+import { Chip } from "@/components/common/Chip";
 import type { RoomFilter } from "@/types/room";
 
 const FILTERS: { value: RoomFilter; label: string }[] = [
@@ -21,20 +22,15 @@ export const RoomStatusFilters = ({
       const isActive = activeFilter === filter.value;
 
       return (
-        <button
+        <Chip
           key={filter.value}
-          type="button"
-          role="tab"
-          aria-selected={isActive}
+          variant="filled"
+          isSelected={isActive}
           onClick={() => onChange(filter.value)}
-          className={`body4 h-8.5 rounded-full px-4.5 transition-colors ${
-            isActive
-              ? "bg-primary-normal text-text-white"
-              : "text-text-secondary-1 bg-bg-gray"
-          }`}
+          className="body4 h-8.5 rounded-full px-4.5"
         >
           {filter.label}
-        </button>
+        </Chip>
       );
     })}
   </div>
