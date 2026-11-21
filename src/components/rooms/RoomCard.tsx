@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { IcArrowRight } from "@/components/icons";
+import { RoomInviteLink } from "@/components/rooms/RoomInviteLink";
 import type { HomeRoom } from "@/types/room";
 
 const statusLabels = {
@@ -15,6 +16,7 @@ interface RoomCardProps {
 
 export const RoomCard = ({ room }: RoomCardProps) => {
   const isInProgress = room.status === "IN_PROGRESS";
+  const isRecruiting = room.status === "RECRUITING";
   const isCompleted = room.status === "COMPLETED";
   const progressPercent =
     room.total_cells > 0
@@ -27,12 +29,12 @@ export const RoomCard = ({ room }: RoomCardProps) => {
       : null;
 
   return (
-    <Link href={`/rooms/${room.room_id}`} className="block cursor-pointer">
-      <article
-        className={`rounded-16 bg-bg-normal border px-4.5 py-4.5 ${
-          isInProgress ? "border-primary-normal/50" : "border-border-1"
-        }`}
-      >
+    <article
+      className={`rounded-16 bg-bg-normal border px-4.5 py-4.5 ${
+        isInProgress ? "border-primary-normal/50" : "border-border-1"
+      }`}
+    >
+      <Link href={`/rooms/${room.room_id}`} className="block cursor-pointer">
         <span
           className={`body5 rounded-8 inline-flex min-h-6.25 items-center px-2.5 ${
             isInProgress
@@ -47,7 +49,9 @@ export const RoomCard = ({ room }: RoomCardProps) => {
             : statusLabels[room.status]}
         </span>
 
-        <h2 className="h3 text-text-title mt-3.5">{room.room_name}</h2>
+        <h2 className="h3 text-text-title mt-3.5 break-words">
+          {room.room_name}
+        </h2>
 
         {isInProgress && (
           <progress
@@ -80,7 +84,9 @@ export const RoomCard = ({ room }: RoomCardProps) => {
             </span>
           )}
         </div>
-      </article>
-    </Link>
+      </Link>
+
+      {isRecruiting && <RoomInviteLink inviteUrl={room.invite_url} />}
+    </article>
   );
 };
