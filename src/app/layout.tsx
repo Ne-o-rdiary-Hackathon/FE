@@ -32,11 +32,11 @@ const RootLayout = ({ children }: RootLayoutProps) => {
   return (
     <html lang="ko" className={pretendard.variable} suppressHydrationWarning>
       <body
-        className="font-pretendard flex min-h-screen justify-center bg-gray-100"
+        className="font-pretendard bg-bg-gray flex min-h-screen justify-center"
         suppressHydrationWarning
       >
         <Providers>
-          <div className="flex min-h-screen w-full max-w-md flex-col bg-white">
+          <div className="bg-bg-normal flex min-h-screen w-full max-w-md flex-col">
             {children}
           </div>
         </Providers>

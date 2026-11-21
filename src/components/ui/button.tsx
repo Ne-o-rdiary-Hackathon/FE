@@ -4,26 +4,27 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-8 border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-primary-normal focus-visible:ring-3 focus-visible:ring-primary-normal/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-red-500 aria-invalid:ring-3 aria-invalid:ring-red-500/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button body4 inline-flex shrink-0 items-center justify-center rounded-8 border border-transparent bg-clip-padding font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-primary-normal focus-visible:ring-3 focus-visible:ring-primary-normal/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-red-normal aria-invalid:ring-3 aria-invalid:ring-red-normal/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary-normal text-white hover:bg-primary-normal-hover",
+        default:
+          "bg-primary-normal text-text-white hover:bg-primary-normal-hover",
         outline:
-          "border-border-1 bg-bg-normal hover:bg-surface-1 hover:text-text-primary aria-expanded:bg-surface-1 aria-expanded:text-text-primary",
+          "border-border-1 bg-bg-normal hover:bg-bg-gray hover:text-text-primary aria-expanded:bg-bg-gray aria-expanded:text-text-primary",
         secondary:
-          "bg-sub1-light text-text-primary hover:bg-sub1-light-hover aria-expanded:bg-sub1-light aria-expanded:text-text-primary",
+          "bg-primary-light text-text-primary hover:bg-primary-light-hover aria-expanded:bg-primary-light aria-expanded:text-text-primary",
         ghost:
-          "hover:bg-surface-1 hover:text-text-primary aria-expanded:bg-surface-1 aria-expanded:text-text-primary",
+          "hover:bg-bg-gray hover:text-text-primary aria-expanded:bg-bg-gray aria-expanded:text-text-primary",
         destructive:
-          "bg-red-500/10 text-red-600 hover:bg-red-500/20 focus-visible:border-red-500/40 focus-visible:ring-red-500/20",
+          "bg-red-normal/10 text-red-normal hover:bg-red-normal/20 focus-visible:border-red-normal/40 focus-visible:ring-red-normal/20",
         link: "text-primary-normal underline-offset-4 hover:underline",
       },
       size: {
         default:
           "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-4 px-2 text-xs in-data-[slot=button-group]:rounded-8 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-4 px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-8 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        xs: "body5 h-6 gap-1 rounded-4 px-2 in-data-[slot=button-group]:rounded-8 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "body5 h-7 gap-1 rounded-4 px-2.5 in-data-[slot=button-group]:rounded-8 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         icon: "size-8",
         "icon-xs":
@@ -39,19 +40,19 @@ const buttonVariants = cva(
   }
 );
 
-function Button({
+type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants>;
+
+const Button = ({
   className,
   variant = "default",
   size = "default",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
-}
+}: ButtonProps) => (
+  <ButtonPrimitive
+    data-slot="button"
+    className={cn(buttonVariants({ variant, size, className }))}
+    {...props}
+  />
+);
 
 export { Button, buttonVariants };

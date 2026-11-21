@@ -24,6 +24,9 @@
   --color-primary-dark-active: #732c0b;
   --color-primary-darker: #592208;
 
+  /* red (error, destructive) */
+  --color-red-normal: #d92d20;
+
   /* neutral */
   --white: #ffffff;
   --color-gray-1: #e9e9ea;
