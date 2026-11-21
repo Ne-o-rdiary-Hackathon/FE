@@ -22,4 +22,46 @@ export interface HomeRoomList {
 
 export type RoomFilter = "ALL" | RoomStatus;
 
+export type HomeRoomListParams = {
+  status: RoomFilter;
+  page: number;
+  size: number;
+};
+
 export type TargetBingo = 1 | 2 | 3 | "ALL";
+
+export type RoomCreateRequest = {
+  room_name: string;
+  max_members: number;
+  target_bingo: number;
+};
+
+export type RoomCreateResponse = {
+  room_id: number;
+  room_name: string;
+  max_members: number;
+  current_members: number;
+  target_bingo: number;
+  status: RoomStatus;
+  invite_url: string;
+};
+
+export type InviteRoomInfo = {
+  room_id: number;
+  room_name: string;
+  status: RoomStatus;
+  current_members: number;
+  max_members: number;
+  target_bingo: number;
+  achieved_bingo: number;
+  can_join: boolean;
+};
+
+export type InviteValidationResponse = {
+  valid: boolean;
+  room: InviteRoomInfo | null;
+};
+
+export type RoomJoinResponse = {
+  room_id: number;
+};

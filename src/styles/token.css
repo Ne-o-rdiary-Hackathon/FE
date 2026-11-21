@@ -26,6 +26,7 @@
 
   /* red (error, destructive) */
   --color-red-normal: #d92d20;
+  --color-red-error: #fb5967;
 
   /* neutral */
   --white: #ffffff;
@@ -55,6 +56,9 @@
   --color-border-2: #bbbcbd;
   --color-border-3: #ff6118;
   --color-border-4: #3dbaff;
+
+  /* kakao brand */
+  --color-kakao: #fee500;
 
   /* radius */
   --radius-4: 0.25rem;

@@ -1,9 +1,9 @@
-export const toggleActivity = (selected: string[], id: string) =>
+export const toggleActivity = <T>(selected: T[], id: T) =>
   selected.includes(id)
     ? selected.filter((item) => item !== id)
     : [...selected, id];
 
-export const toggleGroup = (selected: string[], ids: string[]) => {
+export const toggleGroup = <T>(selected: T[], ids: T[]) => {
   const isAllSelected = ids.every((id) => selected.includes(id));
   return isAllSelected
     ? selected.filter((id) => !ids.includes(id))
