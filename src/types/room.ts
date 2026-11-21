@@ -22,4 +22,10 @@ export interface HomeRoomList {
 
 export type RoomFilter = "ALL" | RoomStatus;
 
+export type HomeRoomListParams = {
+  status: RoomFilter;
+  page: number;
+  size: number;
+};
+
 export type TargetBingo = 1 | 2 | 3 | "ALL";
