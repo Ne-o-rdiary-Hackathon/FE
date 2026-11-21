@@ -1,0 +1,45 @@
+import type { HomeRoomListResponse } from "@/types/room";
+
+export const homeRoomsResponse: HomeRoomListResponse = {
+  total_count: 3,
+  page: 1,
+  size: 10,
+  rooms: [
+    {
+      room_id: 1,
+      room_name: "퇴근 후 도파민 수혈단 🔥",
+      status: "IN_PROGRESS",
+      current_members: 4,
+      max_members: 4,
+      target_bingo: 3,
+      achieved_bingo: 2,
+      completed_cells: 6,
+      total_cells: 9,
+      invite_url: "https://bingopop.app/invite/8X92KABC",
+    },
+    {
+      room_id: 2,
+      room_name: "주말 탈출 대학 동기 모임",
+      status: "RECRUITING",
+      current_members: 2,
+      max_members: 5,
+      target_bingo: 2,
+      achieved_bingo: 0,
+      completed_cells: 0,
+      total_cells: 9,
+      invite_url: "https://bingopop.app/invite/B3J9M2QX",
+    },
+    {
+      room_id: 3,
+      room_name: "10월 가을 소풍 팸",
+      status: "COMPLETED",
+      current_members: 3,
+      max_members: 3,
+      target_bingo: 3,
+      achieved_bingo: 3,
+      completed_cells: 7,
+      total_cells: 9,
+      invite_url: "https://bingopop.app/invite/K7PQ21NM",
+    },
+  ],
+};
