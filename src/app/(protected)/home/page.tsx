@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { RoomActionButton } from "@/components/rooms/RoomActionButton";
 import { RoomCard } from "@/components/rooms/RoomCard";
 import { RoomStatusFilters } from "@/components/rooms/RoomStatusFilters";
+import { RoomsEmptyState } from "@/components/rooms/RoomsEmptyState";
 import { RoomsHeader } from "@/components/rooms/RoomsHeader";
 import { useMeQuery } from "@/hooks/auth/useMeQuery";
 import { useInfiniteScroll } from "@/hooks/common/useInfiniteScroll";
@@ -84,6 +85,9 @@ const RoomsPage = () => {
             <p className="body3 text-text-secondary-2">
               방 목록을 불러오지 못했어요.
             </p>
+          )}
+          {!isPending && !isError && filteredRooms.length === 0 && (
+            <RoomsEmptyState />
           )}
           {visibleRooms.map((room) => (
             <RoomCard key={room.room_id} room={room} />
