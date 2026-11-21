@@ -95,28 +95,26 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
         }
         if (targetRoomId === null) return;
 
-        await submission.mutateAsync({
+        const result = await submission.mutateAsync({
           roomId: targetRoomId,
           body: {
             desired_activity_ids: selections.desired,
             bored_activity_ids: selections.bored,
           },
         });
-        if (isCreatingRoom) router.replace("/invitation");
+        if (isCreatingRoom) {
+          router.replace("/invitation");
+          return;
+        }
+        // 모든 참여자가 제출하면 빙고판이 만들어진다.
+        router.replace(
+          result.all_members_submitted ? `/rooms/${targetRoomId}` : "/home"
+        );
       } catch {
         // Preserve selections for retry.
       }
     }
   };
-
-  if (submission.isSuccess && !isCreatingRoom) {
-    return (
-      <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col justify-center gap-6 px-5">
-        <p>활동 선택을 제출했습니다.</p>
-        <BottomButton onClick={() => router.push("/home")}>홈으로</BottomButton>
-      </main>
-    );
-  }
 
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">
