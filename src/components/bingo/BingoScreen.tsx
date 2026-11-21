@@ -124,6 +124,9 @@ export const BingoScreen = ({ room }: { room: HomeRoom }) => {
           <h2 className="body5 font-bold">
             함께하는 멤버 ({room.current_members}명)
           </h2>
+          <span className="text-bingo-muted text-xs leading-[1.4] tracking-[-0.025em]">
+            실시간 동기화 중
+          </span>
         </div>
         <div className="relative mx-auto mt-2.5 grid max-w-[22.75rem] grid-cols-3 gap-3">
           <div
