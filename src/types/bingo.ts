@@ -27,3 +27,27 @@ export interface BingoBoardResponse {
   bingo_cell_ids: number[];
   cells: BingoCell[];
 }
+
+export type BingoCellDto = BingoCell;
+export type BingoMemberDto = BoardMember;
+export type BingoBoardDto = BingoBoardResponse;
+
+export interface BingoResultDto extends Omit<
+  BingoBoardResponse,
+  "room_status" | "members"
+> {
+  members: {
+    nickname: string;
+    profile_image_url: string | null;
+    verified_count: number;
+  }[];
+}
+
+export interface BingoVerificationDto {
+  cell: BingoCell;
+  achieved_bingo: number;
+  completed_cells: number;
+  new_bingo_cell_ids: number[];
+  bingo_cell_ids: number[];
+  room_completed: boolean;
+}
