@@ -8,9 +8,11 @@ import { BottomButton } from "@/components/common/BottomButton";
 import { Chip } from "@/components/common/Chip";
 import { useActivitiesQuery } from "@/hooks/activities/useActivitiesQuery";
 import { useSubmitActivitiesMutation } from "@/hooks/activities/useSubmitActivitiesMutation";
+import { useCreateRoomMutation } from "@/hooks/rooms/useCreateRoomMutation";
 import { getSubmissionErrorMessage } from "@/lib/preferences/errors";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
+import { useCreateRoomStore } from "@/stores/createRoom";
 
 export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
   const {
@@ -20,6 +22,12 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
     refetch,
   } = useActivitiesQuery();
   const submission = useSubmitActivitiesMutation();
+  const createRoomMutation = useCreateRoomMutation();
+  const roomDraft = useCreateRoomStore((state) => state.draft);
+  const createdRoom = useCreateRoomStore((state) => state.createdRoom);
+  const setCreatedRoom = useCreateRoomStore((state) => state.setCreatedRoom);
+  const isCreatingRoom = roomId === null && roomDraft !== null;
+  const isSubmitting = submission.isPending || createRoomMutation.isPending;
   const router = useRouter();
   const [step, setStep] = useState<"desired" | "bored">("bored");
   const [categoryIndexes, setCategoryIndexes] = useState({
@@ -75,22 +83,33 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
       setStep("desired");
       window.scrollTo(0, 0);
     } else {
-      if (!roomId || submission.isPending) return;
+      if (isSubmitting) return;
       try {
+        let targetRoomId = roomId;
+        if (targetRoomId === null && roomDraft) {
+          // 제출만 실패한 뒤 다시 누르면 방을 또 만들지 않는다.
+          const room =
+            createdRoom ?? (await createRoomMutation.mutateAsync(roomDraft));
+          setCreatedRoom(room);
+          targetRoomId = room.room_id;
+        }
+        if (targetRoomId === null) return;
+
         await submission.mutateAsync({
-          roomId,
+          roomId: targetRoomId,
           body: {
             desired_activity_ids: selections.desired,
             bored_activity_ids: selections.bored,
           },
         });
+        if (isCreatingRoom) router.replace("/invitation");
       } catch {
         // Preserve selections for retry.
       }
     }
   };
 
-  if (submission.isSuccess) {
+  if (submission.isSuccess && !isCreatingRoom) {
     return (
       <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col justify-center gap-6 px-5">
         <p>활동 선택을 제출했습니다.</p>
@@ -299,6 +318,9 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
         })}
       </div>
       <div className="border-border-1 bg-bg-normal sticky bottom-0 border-t px-5 pt-4 pb-6">
+        {createRoomMutation.isError && (
+          <p role="alert">방을 만들지 못했어요. 다시 시도해 주세요.</p>
+        )}
         {submission.isError && (
           <p role="alert">{getSubmissionErrorMessage(submission.error)}</p>
         )}
@@ -308,11 +330,11 @@ export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
             isLoading ||
             isError ||
             categories.length === 0 ||
-            submission.isPending ||
-            (isDesired && !roomId)
+            isSubmitting ||
+            (isDesired && !roomId && !isCreatingRoom)
           }
         >
-          {submission.isPending
+          {isSubmitting
             ? "제출 중..."
             : !isDesired
               ? `다음 (총 ${selected.length}개 항목 반영)`
