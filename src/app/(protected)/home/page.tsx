@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { InviteCodeJoinDialog } from "@/components/rooms/InviteCodeJoinDialog";
 import { RoomActionButton } from "@/components/rooms/RoomActionButton";
 import { RoomCard } from "@/components/rooms/RoomCard";
 import { RoomStatusFilters } from "@/components/rooms/RoomStatusFilters";
@@ -10,6 +11,7 @@ import { RoomsHeader } from "@/components/rooms/RoomsHeader";
 import { useMeQuery } from "@/hooks/auth/useMeQuery";
 import { useInfiniteScroll } from "@/hooks/common/useInfiniteScroll";
 import { useRoomsQuery } from "@/hooks/rooms/useRoomsQuery";
+import { takePendingInviteCode } from "@/lib/invite/inviteCode";
 import type { HomeRoomListParams, RoomFilter } from "@/types/room";
 
 const ROOM_LIST_PARAMS: HomeRoomListParams = {
@@ -31,6 +33,21 @@ const RoomsPage = () => {
   const totalCount = roomList?.total_count ?? 0;
   const [activeFilter, setActiveFilter] = useState<RoomFilter>("ALL");
   const [visibleCount, setVisibleCount] = useState(ROOMS_PAGE_SIZE);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [initialInviteCode, setInitialInviteCode] = useState("");
+
+  // 초대 링크(/invite/[code])로 들어온 경우 코드를 채운 채로 참여 창을 연다.
+  useEffect(() => {
+    const pendingCode = takePendingInviteCode();
+    if (!pendingCode) return;
+    setInitialInviteCode(pendingCode);
+    setIsInviteOpen(true);
+  }, []);
+
+  const handleJoinClick = () => {
+    setInitialInviteCode("");
+    setIsInviteOpen(true);
+  };
 
   const filteredRooms = useMemo(
     () =>
@@ -99,7 +116,13 @@ const RoomsPage = () => {
         </div>
       </section>
 
-      <RoomActionButton />
+      <RoomActionButton onJoinClick={handleJoinClick} />
+      <InviteCodeJoinDialog
+        open={isInviteOpen}
+        onOpenChange={setIsInviteOpen}
+        initialCode={initialInviteCode}
+        joinedRoomIds={rooms.map((room) => room.room_id)}
+      />
     </main>
   );
 };
