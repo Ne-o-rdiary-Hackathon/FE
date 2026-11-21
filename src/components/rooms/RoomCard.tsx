@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
 import { IcArrowRight } from "@/components/icons";
 import { RoomInviteLink } from "@/components/rooms/RoomInviteLink";
+import { getBingoProgress } from "@/lib/bingo/room";
+import { EMPTY_ROOM_PHOTOS, useBingoStore } from "@/stores/bingo";
 import type { HomeRoom } from "@/types/room";
 
 const statusLabels = {
@@ -15,12 +19,21 @@ interface RoomCardProps {
 }
 
 export const RoomCard = ({ room }: RoomCardProps) => {
+  const photos = useBingoStore(
+    (state) => state.photosByRoom[room.room_id] ?? EMPTY_ROOM_PHOTOS
+  );
   const isInProgress = room.status === "IN_PROGRESS";
   const isRecruiting = room.status === "RECRUITING";
   const isCompleted = room.status === "COMPLETED";
+  const progress = isInProgress
+    ? getBingoProgress(photos)
+    : {
+        completedCells: room.completed_cells,
+        completedBingos: room.achieved_bingo,
+      };
   const progressPercent =
     room.total_cells > 0
-      ? Math.round((room.completed_cells / room.total_cells) * 100)
+      ? Math.round((progress.completedCells / room.total_cells) * 100)
       : 0;
   const actionLabel = isInProgress
     ? "입장하기"
@@ -69,7 +82,7 @@ export const RoomCard = ({ room }: RoomCardProps) => {
                 isCompleted ? "text-text-secondary-2" : "text-primary-normal"
               }
             >
-              {room.achieved_bingo}/{room.target_bingo} 빙고 달성
+              {progress.completedBingos}/{room.target_bingo} 빙고 달성
             </span>
             <span className="text-text-secondary-2">
               {" "}
