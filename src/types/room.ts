@@ -29,3 +29,19 @@ export type HomeRoomListParams = {
 };
 
 export type TargetBingo = 1 | 2 | 3 | "ALL";
+
+export type RoomCreateRequest = {
+  room_name: string;
+  max_members: number;
+  target_bingo: number;
+};
+
+export type RoomCreateResponse = {
+  room_id: number;
+  room_name: string;
+  max_members: number;
+  current_members: number;
+  target_bingo: number;
+  status: RoomStatus;
+  invite_url: string;
+};
