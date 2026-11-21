@@ -1,16 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 
 import { Button } from "@/components/ui/button";
 import { cropPhoto, renderPhoto } from "@/lib/bingo/photo";
+import { HttpError } from "@/lib/api/http-error";
 
 interface PhotoEditorProps {
   file: File;
   onBack: () => void;
-  onComplete: (blob: Blob) => void;
+  onComplete: (blob: Blob) => Promise<void>;
 }
 
 export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
@@ -22,6 +23,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<Area | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const saveLock = useRef(false);
   const [cropRevision, setCropRevision] = useState(0);
 
   useEffect(() => {
@@ -55,15 +57,28 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
     resetCrop();
   };
   const handleSave = async () => {
-    if (!image || !preview || !area || isSaving) return;
+    if (!image || !preview || !area || saveLock.current) return;
+    saveLock.current = true;
     setIsSaving(true);
+    setError(null);
     try {
-      onComplete(
+      await onComplete(
         await cropPhoto(image, rotation, flipped, area, preview.width)
       );
-    } catch {
-      setError("사진을 저장하지 못했어요. 다시 시도해 주세요.");
+    } catch (cause) {
+      setError(
+        cause instanceof HttpError
+          ? cause.status === 409
+            ? "방이나 칸의 상태가 변경됐어요. 빙고판으로 돌아가 확인해 주세요."
+            : cause.status === 403
+              ? "이 방에 사진을 인증할 권한이 없어요."
+              : "사진을 등록하지 못했어요. 다시 시도해 주세요."
+          : cause instanceof Error
+            ? cause.message
+            : "사진을 등록하지 못했어요. 다시 시도해 주세요."
+      );
     } finally {
+      saveLock.current = false;
       setIsSaving(false);
     }
   };
@@ -74,6 +89,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
         <button
           type="button"
           onClick={onBack}
+          disabled={isSaving}
           aria-label="뒤로 가기"
           className="absolute left-5"
         >
@@ -88,13 +104,17 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
         <button
           type="button"
           onClick={handleReset}
+          disabled={isSaving}
           className="text-text-disable body2 absolute right-5"
         >
           초기화
         </button>
       </header>
       <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 pb-8">
-        <div className="relative mx-auto max-h-[30.125rem] min-h-64 w-full max-w-[23.125rem] flex-1">
+        <div
+          inert={isSaving}
+          className="relative mx-auto max-h-[30.125rem] min-h-64 w-full max-w-[23.125rem] flex-1"
+        >
           {preview && (
             <Cropper
               key={cropRevision}
@@ -103,10 +123,19 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
               zoom={zoom}
               aspect={1}
               showGrid={false}
+              zoomWithScroll={!isSaving}
+              onTouchRequest={() => !saveLock.current}
+              onWheelRequest={() => !saveLock.current}
               classes={{ cropAreaClassName: "bingo-photo-crop-area" }}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={(_area, pixels) => setArea(pixels)}
+              onCropChange={(next) => {
+                if (!saveLock.current) setCrop(next);
+              }}
+              onZoomChange={(next) => {
+                if (!saveLock.current) setZoom(next);
+              }}
+              onCropComplete={(_area, pixels) => {
+                if (!saveLock.current) setArea(pixels);
+              }}
               mediaProps={{ alt: "편집 중인 사진" }}
             />
           )}
@@ -127,6 +156,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
             <button
               type="button"
               aria-label="좌우 반전"
+              disabled={isSaving}
               aria-pressed={flipped}
               onClick={() => {
                 setFlipped(!flipped);
@@ -145,6 +175,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
             <button
               type="button"
               aria-label="90도 회전"
+              disabled={isSaving}
               onClick={() => {
                 setRotation((rotation + 90) % 360);
                 resetCrop();
@@ -167,7 +198,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
           disabled={!area || isSaving}
           onClick={handleSave}
         >
-          빙고판 만들기
+          {isSaving ? "인증 중..." : "인증 완료"}
         </Button>
       </div>
     </main>
