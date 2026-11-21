@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "칸칸 빙고",
+    "slug": "kankan-bingo",
+    "package": "com.kankanbingo.app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.kankanbingo.app",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e294dca1-9c5a-45ff-979a-ad637461276c"
+      }
+    },
+    "owner": "huiwoo.jo"
+  }
+}
