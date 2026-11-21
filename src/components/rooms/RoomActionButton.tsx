@@ -1,17 +1,24 @@
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { IcClose, IcPlus } from "@/components/icons";
 
 const ROOM_ACTIONS = [
-  { label: "방 생성하기", value: "create" },
-  { label: "방 참여하기", value: "join" },
+  { label: "방 생성하기", value: "create", href: "/create" },
+  { label: "방 참여하기", value: "join", href: null },
 ] as const;
 
 export const RoomActionButton = () => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleToggle = () => setIsOpen((prev) => !prev);
   const handleClose = () => setIsOpen(false);
+
+  const handleSelectAction = (href: string | null) => {
+    handleClose();
+    if (href) router.push(href);
+  };
 
   return (
     <>
@@ -30,7 +37,7 @@ export const RoomActionButton = () => {
               <button
                 key={action.value}
                 type="button"
-                onClick={handleClose}
+                onClick={() => handleSelectAction(action.href)}
                 className={`body2 text-text-primary py-3 text-left ${
                   index > 0 ? "border-border-1 border-t" : ""
                 }`}
