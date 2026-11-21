@@ -38,10 +38,10 @@ const parseResponseBody = async (response: Response) => {
   return text || undefined;
 };
 
-async function request<T>(
+const request = async <T>(
   path: string,
   { params, body, headers, ...init }: RequestOptions = {}
-): Promise<T> {
+): Promise<T> => {
   const isJsonBody = body !== undefined && !(body instanceof FormData);
 
   const response = await fetch(buildUrl(path, params), {
@@ -64,7 +64,7 @@ async function request<T>(
   }
 
   return data as T;
-}
+};
 
 export const api = {
   get: <T>(path: string, options?: Omit<RequestOptions, "body">) =>
