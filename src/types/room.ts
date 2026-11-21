@@ -21,3 +21,5 @@ export interface HomeRoomList {
 }
 
 export type RoomFilter = "ALL" | RoomStatus;
+
+export type TargetBingo = 1 | 2 | 3 | "ALL";
