@@ -8,7 +8,11 @@ const ROOM_ACTIONS = [
   { label: "방 참여하기", value: "join", href: null },
 ] as const;
 
-export const RoomActionButton = () => {
+interface RoomActionButtonProps {
+  onJoinClick: () => void;
+}
+
+export const RoomActionButton = ({ onJoinClick }: RoomActionButtonProps) => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -18,6 +22,7 @@ export const RoomActionButton = () => {
   const handleSelectAction = (href: string | null) => {
     handleClose();
     if (href) router.push(href);
+    else onJoinClick();
   };
 
   return (

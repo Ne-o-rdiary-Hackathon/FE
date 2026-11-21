@@ -6,11 +6,34 @@ import { useRouter } from "next/navigation";
 
 import { BottomButton } from "@/components/common/BottomButton";
 import { Chip } from "@/components/common/Chip";
-import { ACTIVITY_CATEGORIES } from "@/constants/activities";
+import { useActivitiesQuery } from "@/hooks/activities/useActivitiesQuery";
+import { useSubmitActivitiesMutation } from "@/hooks/activities/useSubmitActivitiesMutation";
+import { useCreateBingoBoardMutation } from "@/hooks/rooms/useCreateBingoBoardMutation";
+import { useCreateRoomMutation } from "@/hooks/rooms/useCreateRoomMutation";
+import { HttpError } from "@/lib/api/http-error";
+import { getSubmissionErrorMessage } from "@/lib/preferences/errors";
 import { toggleActivity, toggleGroup } from "@/lib/preferences/selection";
 import { cn } from "@/lib/utils";
+import { useCreateRoomStore } from "@/stores/createRoom";
 
-export const PreferenceSelection = () => {
+export const PreferenceSelection = ({ roomId }: { roomId: number | null }) => {
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useActivitiesQuery();
+  const submission = useSubmitActivitiesMutation();
+  const createRoomMutation = useCreateRoomMutation();
+  const createBingoBoardMutation = useCreateBingoBoardMutation();
+  const roomDraft = useCreateRoomStore((state) => state.draft);
+  const createdRoom = useCreateRoomStore((state) => state.createdRoom);
+  const setCreatedRoom = useCreateRoomStore((state) => state.setCreatedRoom);
+  const isCreatingRoom = roomId === null && roomDraft !== null;
+  const isSubmitting =
+    submission.isPending ||
+    createRoomMutation.isPending ||
+    createBingoBoardMutation.isPending;
   const router = useRouter();
   const [step, setStep] = useState<"desired" | "bored">("bored");
   const [categoryIndexes, setCategoryIndexes] = useState({
@@ -22,11 +45,11 @@ export const PreferenceSelection = () => {
     bored: [] as string[],
   });
   const [selections, setSelections] = useState({
-    desired: [] as string[],
-    bored: [] as string[],
+    desired: [] as number[],
+    bored: [] as number[],
   });
   const categoryIndex = categoryIndexes[step];
-  const category = ACTIVITY_CATEGORIES[categoryIndex];
+  const category = categories[categoryIndex];
   const selected = selections[step];
   const isDesired = step === "desired";
 
@@ -55,18 +78,58 @@ export const PreferenceSelection = () => {
       return;
     }
     if (window.history.length > 1) router.back();
-    else router.push("/");
+    else router.push("/home");
   };
   const handleCategory = (index: number) => {
     setCategoryIndexes((previous) => ({ ...previous, [step]: index }));
   };
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!isDesired) {
       window.history.pushState({ preferenceStep: "desired" }, "", "#desired");
       setStep("desired");
       window.scrollTo(0, 0);
     } else {
-      router.push("/invitation");
+      if (isSubmitting) return;
+      try {
+        let targetRoomId = roomId;
+        if (targetRoomId === null && roomDraft) {
+          // 제출만 실패한 뒤 다시 누르면 방을 또 만들지 않는다.
+          const room =
+            createdRoom ?? (await createRoomMutation.mutateAsync(roomDraft));
+          setCreatedRoom(room);
+          targetRoomId = room.room_id;
+        }
+        if (targetRoomId === null) return;
+
+        const result = await submission.mutateAsync({
+          roomId: targetRoomId,
+          body: {
+            desired_activity_ids: selections.desired,
+            bored_activity_ids: selections.bored,
+          },
+        });
+        if (isCreatingRoom) {
+          router.replace("/invitation");
+          return;
+        }
+        if (!result.all_members_submitted) {
+          router.replace("/home");
+          return;
+        }
+
+        // 마지막 참여자가 제출하면 빙고판을 만든다.
+        try {
+          await createBingoBoardMutation.mutateAsync(targetRoomId);
+          router.replace(`/rooms/${targetRoomId}`);
+        } catch (error) {
+          // 409: 이미 빙고판이 있음. 그 외 실패는 홈에서 다시 확인한다.
+          const isAlreadyCreated =
+            error instanceof HttpError && error.status === 409;
+          router.replace(isAlreadyCreated ? `/rooms/${targetRoomId}` : "/home");
+        }
+      } catch {
+        // Preserve selections for retry.
+      }
     }
   };
 
@@ -119,9 +182,9 @@ export const PreferenceSelection = () => {
           aria-label="활동 카테고리"
           className="border-border-1 mt-2 flex [scrollbar-width:none] overflow-x-auto border-b px-5"
         >
-          {ACTIVITY_CATEGORIES.map((item, index) => (
+          {categories.map((item, index) => (
             <button
-              key={item.name}
+              key={item.category_id}
               type="button"
               aria-current={categoryIndex === index ? "true" : undefined}
               onClick={() => handleCategory(index)}
@@ -132,20 +195,37 @@ export const PreferenceSelection = () => {
                   : "border-transparent text-text-primary"
               )}
             >
-              {item.label}
+              {item.category_name}
             </button>
           ))}
         </nav>
       </header>
       <div className="flex-1 px-6.5 pt-1 pb-28">
-        {category.groups.map((group) => {
-          const groupKey = `${category.name}:${group.name}`;
+        {isLoading && <output>활동 목록을 불러오는 중입니다.</output>}
+        {isError && (
+          <div role="alert">
+            <p>활동 목록을 불러오지 못했습니다.</p>
+            <button type="button" onClick={() => refetch()}>
+              다시 시도
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && categories.length === 0 && (
+          <p>등록된 활동이 없습니다.</p>
+        )}
+        {category?.subcategories.map((group) => {
+          const groupKey = `${category.category_id}:${group.category_id}`;
           const isExpanded = expanded[step].includes(groupKey);
-          const isAllSelected = group.activities.every((id) =>
-            selected.includes(id)
-          );
+          const isAllSelected =
+            group.activities.length > 0 &&
+            group.activities.every((activity) =>
+              selected.includes(activity.activity_id)
+            );
           return (
-            <section key={group.name} className="border-border-1 border-b">
+            <section
+              key={group.category_id}
+              className="border-border-1 border-b"
+            >
               <button
                 type="button"
                 aria-expanded={isExpanded}
@@ -158,7 +238,7 @@ export const PreferenceSelection = () => {
                 className="focus-visible:outline-primary-normal flex min-h-18.5 w-full items-center justify-between text-left focus-visible:outline-2"
               >
                 <span className="text-lg leading-[1.4] font-semibold tracking-tight">
-                  {group.name}
+                  {group.category_name}
                 </span>
                 <Image
                   src="/icons/preferences/expand.svg"
@@ -184,17 +264,19 @@ export const PreferenceSelection = () => {
                   <div className="pt-1 pb-4">
                     <div className="flex flex-wrap gap-x-1 gap-y-2">
                       {group.activities.map((activity) => {
-                        const isSelected = selected.includes(activity);
+                        const isSelected = selected.includes(
+                          activity.activity_id
+                        );
                         return (
                           <Chip
-                            key={activity}
+                            key={activity.activity_id}
                             isSelected={isSelected}
                             onClick={() =>
                               setSelections((previous) => ({
                                 ...previous,
                                 [step]: toggleActivity(
                                   previous[step],
-                                  activity
+                                  activity.activity_id
                                 ),
                               }))
                             }
@@ -205,7 +287,7 @@ export const PreferenceSelection = () => {
                                 : "body2 border-border-2 text-text-secondary-2"
                             )}
                           >
-                            {activity}
+                            {activity.activity_name}
                           </Chip>
                         );
                       })}
@@ -216,7 +298,12 @@ export const PreferenceSelection = () => {
                       onClick={() =>
                         setSelections((previous) => ({
                           ...previous,
-                          [step]: toggleGroup(previous[step], group.activities),
+                          [step]: toggleGroup(
+                            previous[step],
+                            group.activities.map(
+                              (activity) => activity.activity_id
+                            )
+                          ),
                         }))
                       }
                       className={cn(
@@ -246,10 +333,27 @@ export const PreferenceSelection = () => {
         })}
       </div>
       <div className="border-border-1 bg-bg-normal sticky bottom-0 border-t px-5 pt-4 pb-6">
-        <BottomButton onClick={handleNext}>
-          {!isDesired
-            ? `다음 (총 ${selected.length}개 항목 반영)`
-            : `선택 완료 (총 ${selected.length}개 항목 반영)`}
+        {createRoomMutation.isError && (
+          <p role="alert">방을 만들지 못했어요. 다시 시도해 주세요.</p>
+        )}
+        {submission.isError && (
+          <p role="alert">{getSubmissionErrorMessage(submission.error)}</p>
+        )}
+        <BottomButton
+          onClick={handleNext}
+          disabled={
+            isLoading ||
+            isError ||
+            categories.length === 0 ||
+            isSubmitting ||
+            (isDesired && !roomId && !isCreatingRoom)
+          }
+        >
+          {isSubmitting
+            ? "제출 중..."
+            : !isDesired
+              ? `다음 (총 ${selected.length}개 항목 반영)`
+              : `선택 완료 (총 ${selected.length}개 항목 반영)`}
         </BottomButton>
       </div>
     </main>
