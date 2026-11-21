@@ -94,7 +94,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
         </button>
       </header>
       <div className="flex min-h-0 flex-1 flex-col px-4 pt-5 pb-8">
-        <div className="relative min-h-64 flex-1">
+        <div className="relative mx-auto max-h-[30.125rem] min-h-64 w-full max-w-[23.125rem] flex-1">
           {preview && (
             <Cropper
               key={cropRevision}
@@ -103,6 +103,7 @@ export const PhotoEditor = ({ file, onBack, onComplete }: PhotoEditorProps) => {
               zoom={zoom}
               aspect={1}
               showGrid={false}
+              classes={{ cropAreaClassName: "bingo-photo-crop-area" }}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={(_area, pixels) => setArea(pixels)}

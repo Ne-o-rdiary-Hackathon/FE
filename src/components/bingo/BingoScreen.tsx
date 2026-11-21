@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { MOCK_BINGO } from "@/mocks/bingo";
+import { getCompletedLines } from "@/lib/bingo/lines";
 import { PhotoEditor } from "./PhotoEditor";
 
 export const BingoScreen = () => {
@@ -14,22 +15,13 @@ export const BingoScreen = () => {
   );
   const [photos, setPhotos] = useState<Record<number, string>>({});
   const photoUrls = useRef<string[]>([]);
+  const selectedCellRef = useRef<HTMLDivElement>(null);
   useEffect(
     () => () => photoUrls.current.forEach((url) => URL.revokeObjectURL(url)),
     []
   );
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
-  const completedLines = lines.filter((line) =>
-    line.every((index) => photos[index])
+  const completedLines = getCompletedLines(
+    new Set(Object.keys(photos).map(Number))
   );
 
   const handleComplete = (blob: Blob) => {
@@ -45,8 +37,20 @@ export const BingoScreen = () => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setSelectedIndex(null);
     };
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !selectedCellRef.current?.contains(event.target)
+      ) {
+        setSelectedIndex(null);
+      }
+    };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
   }, [selectedIndex]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -124,85 +128,146 @@ export const BingoScreen = () => {
           </h2>
         </div>
         <div className="relative mx-auto mt-2.5 grid max-w-[22.75rem] grid-cols-3 gap-x-2 gap-y-3">
-          {MOCK_BINGO.activities.map((activity, index) => (
-            <button
-              type="button"
-              key={activity.join(" ")}
-              disabled={Boolean(photos[index])}
-              aria-pressed={selectedIndex === index}
-              onClick={() =>
-                setSelectedIndex(selectedIndex === index ? null : index)
-              }
-              className={`bg-bingo-cell text-primary-darker @container relative flex aspect-[116/112] min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl text-center ${selectedIndex === index ? "ring-primary-normal ring-1 ring-inset" : ""}`}
-            >
-              {photos[index] && (
-                <>
-                  <Image
-                    src={photos[index]}
-                    alt=""
-                    fill
-                    unoptimized
-                    sizes="(max-width: 402px) 33vw, 116px"
-                    className="object-cover"
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 gap-x-2 gap-y-3"
+          >
+            {completedLines.map((line) => {
+              const horizontal = line[1] - line[0] === 1;
+              const vertical = line[1] - line[0] === 3;
+              const position = horizontal
+                ? [
+                    "col-span-3 row-start-1",
+                    "col-span-3 row-start-2",
+                    "col-span-3 row-start-3",
+                  ][Math.floor(line[0] / 3)]
+                : vertical
+                  ? [
+                      "row-span-3 col-start-1",
+                      "row-span-3 col-start-2",
+                      "row-span-3 col-start-3",
+                    ][line[0]]
+                  : "col-span-3 row-span-3";
+              return (
+                <div key={line.join("-")} className={`relative ${position}`}>
+                  <div
+                    className={`bingo-line ${!horizontal && !vertical ? (line[0] === 0 ? "bingo-line-diagonal" : "bingo-line-diagonal-reverse") : "absolute -inset-2"}`}
                   />
-                  <span className="absolute inset-0 bg-black/50" />
-                </>
-              )}
-              {index === 4 && !photos[index] && (
-                <Image
-                  src="/icons/bingo/center-star.svg"
-                  alt=""
-                  width={114}
-                  height={114}
-                  className="pointer-events-none absolute max-w-full"
-                />
-              )}
-              <div
-                className={`relative translate-y-[min(0.5rem,6.9cqw)] ${photos[index] ? "text-white" : index === 4 ? "text-primary-normal" : ""}`}
-              >
-                <p className="text-[min(0.875rem,12.07cqw)] leading-[1.4] font-semibold tracking-[-0.025em]">
-                  {activity[0]}
-                  <br />
-                  {activity[1]}
-                </p>
-                <p className="mt-[min(0.5rem,6.9cqw)] text-[min(0.6875rem,9.48cqw)] leading-[1.4] tracking-[-0.025em]">
-                  {photos[index] ? "인증완료" : "미완료"}
-                </p>
-              </div>
-            </button>
-          ))}
-          {selectedIndex !== null && (
+                </div>
+              );
+            })}
+          </div>
+          {MOCK_BINGO.activities.map((activity, index) => (
             <div
-              className="bg-bingo-menu absolute bottom-0 left-1/2 z-10 w-55 -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-xl backdrop-blur-sm"
-              aria-label="사진 추가"
+              key={activity.join(" ")}
+              ref={selectedIndex === index ? selectedCellRef : null}
+              className={`relative min-w-0 ${selectedIndex === index ? "z-20" : ""}`}
             >
-              <label className="border-bingo-menu-divider body1 flex h-11 cursor-pointer items-center justify-between border-b px-4">
-                사진 선택
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                />
-              </label>
-              <label className="body1 flex h-11 cursor-pointer items-center justify-between px-4">
-                카메라로 촬영
-                <Image
-                  src="/icons/bingo/camera.png"
-                  alt=""
-                  width={22}
-                  height={22}
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                />
-              </label>
+              <button
+                type="button"
+                disabled={Boolean(photos[index])}
+                aria-pressed={selectedIndex === index}
+                onClick={() =>
+                  setSelectedIndex(selectedIndex === index ? null : index)
+                }
+                className={`bg-bingo-cell text-primary-darker @container relative flex aspect-[116/112] w-full min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl text-center ${selectedIndex === index ? "ring-primary-normal ring-1 ring-inset" : ""}`}
+              >
+                {photos[index] && (
+                  <>
+                    <Image
+                      src={photos[index]}
+                      alt=""
+                      fill
+                      unoptimized
+                      sizes="(max-width: 402px) 33vw, 116px"
+                      className="object-cover"
+                    />
+                    <span className="bingo-photo-shade absolute inset-0" />
+                  </>
+                )}
+                {completedLines.some((line) =>
+                  line.some((cell) => cell === index)
+                ) && (
+                  <span className="text-primary-normal absolute top-[min(0.625rem,8.62cqw)] z-10 rounded-[min(0.25rem,3.45cqw)] bg-white/90 px-[min(0.375rem,5.17cqw)] py-[min(0.125rem,1.72cqw)] text-[min(0.625rem,8.62cqw)] leading-[1.4] font-semibold tracking-[-0.025em]">
+                    BINGO!
+                  </span>
+                )}
+                {index === 4 && !photos[index] && (
+                  <Image
+                    src="/icons/bingo/center-star.svg"
+                    alt=""
+                    width={114}
+                    height={114}
+                    className="pointer-events-none absolute max-w-full"
+                  />
+                )}
+                <div
+                  className={`relative ${photos[index] && completedLines.some((line) => line.some((cell) => cell === index)) ? "" : "translate-y-[min(0.5rem,6.9cqw)]"} ${photos[index] ? "text-white" : index === 4 ? "text-primary-normal" : ""}`}
+                >
+                  <p
+                    className={`${photos[index] && completedLines.some((line) => line.some((cell) => cell === index)) ? "text-[min(0.8125rem,11.21cqw)]" : "text-[min(0.875rem,12.07cqw)]"} leading-[1.4] font-semibold tracking-[-0.025em]`}
+                  >
+                    {activity[0]}
+                    <br />
+                    {activity[1]}
+                  </p>
+                  {!completedLines.some((line) =>
+                    line.some((cell) => cell === index)
+                  ) && (
+                    <p className="mt-[min(0.5rem,6.9cqw)] text-[min(0.6875rem,9.48cqw)] leading-[1.4] tracking-[-0.025em]">
+                      {photos[index] ? "인증완료" : "미완료"}
+                    </p>
+                  )}
+                </div>
+                {photos[index] &&
+                  completedLines.some((line) =>
+                    line.some((cell) => cell === index)
+                  ) && (
+                    <p className="absolute bottom-[min(0.625rem,8.62cqw)] text-[min(0.6875rem,9.48cqw)] leading-[1.4] tracking-[-0.025em] text-white">
+                      인증완료
+                    </p>
+                  )}
+              </button>
+              {selectedIndex === index && (
+                <div
+                  className={`bg-bingo-menu absolute z-10 w-55 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl backdrop-blur-sm ${index >= 6 ? "bottom-full mb-1" : "top-full mt-1"} ${index % 3 === 0 ? "left-0" : index % 3 === 2 ? "right-0" : "left-1/2 -translate-x-1/2"}`}
+                  aria-label="사진 추가"
+                >
+                  <label className="border-bingo-menu-divider body1 flex h-11 cursor-pointer items-center justify-between border-b px-4">
+                    사진 선택
+                    <Image
+                      src="/icons/bingo/select-photo.svg"
+                      alt=""
+                      width={20}
+                      height={20}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  <label className="body1 flex h-11 cursor-pointer items-center justify-between px-4">
+                    카메라로 촬영
+                    <Image
+                      src="/icons/bingo/camera.png"
+                      alt=""
+                      width={22}
+                      height={22}
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       </section>
     </main>

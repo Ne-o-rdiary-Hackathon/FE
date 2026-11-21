@@ -3,6 +3,36 @@
 @import "shadcn/tailwind.css";
 @import "../styles/token.css";
 
+.reactEasyCrop_CropArea.bingo-photo-crop-area {
+  border: 0;
+  color: rgb(0 0 0 / 55%);
+}
+
+.bingo-line {
+  border: 0.03125rem solid var(--color-bingo-line-border);
+  border-radius: 0.75rem;
+  background: var(--color-bingo-line);
+  box-shadow: inset 0 -1.5rem 1.8875rem -0.8125rem rgb(255 97 24 / 26%);
+}
+
+.bingo-photo-shade {
+  background: linear-gradient(to bottom, rgb(0 0 0 / 21%), rgb(0 0 0 / 70%));
+}
+
+.bingo-line-diagonal,
+.bingo-line-diagonal-reverse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 141.4%;
+  height: 33%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.bingo-line-diagonal-reverse {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 @layer base {
   * {
     @apply border-border-1;
