@@ -1,6 +1,11 @@
 import { api } from "@/lib/api/http-client";
 import type { ApiResponse } from "@/types/api";
-import type { HomeRoomList, HomeRoomListParams } from "@/types/room";
+import type {
+  HomeRoomList,
+  HomeRoomListParams,
+  RoomCreateRequest,
+  RoomCreateResponse,
+} from "@/types/room";
 
 /** 내가 참여한 방 목록 조회 (GET /api/rooms). */
 export const fetchRooms = async (
@@ -9,5 +14,16 @@ export const fetchRooms = async (
   const response = await api.get<ApiResponse<HomeRoomList>>("/api/rooms", {
     params,
   });
+  return response.data;
+};
+
+/** 빙고 방 생성 (POST /api/rooms). */
+export const createRoom = async (
+  body: RoomCreateRequest
+): Promise<RoomCreateResponse> => {
+  const response = await api.post<ApiResponse<RoomCreateResponse>>(
+    "/api/rooms",
+    body
+  );
   return response.data;
 };

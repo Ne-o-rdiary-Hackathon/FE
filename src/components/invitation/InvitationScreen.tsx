@@ -7,21 +7,29 @@ import { useRouter } from "next/navigation";
 import { IcCheck } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
+import { TARGET_BINGO_API_VALUES } from "@/constants/room";
+import { useCreateRoomStore } from "@/stores/createRoom";
 
-const MOCK_INVITATION = {
-  roomName: "퇴근 후 도파민 수혈단",
-  memberCount: 4,
-  targetBingo: 3,
-  inviteUrl: "https://kankan.app/invite/8X92K",
-};
 const TOAST_DURATION_MS = 2000;
+
+const getTargetBingoLabel = (targetBingo: number) =>
+  targetBingo === TARGET_BINGO_API_VALUES.ALL
+    ? "올빙고"
+    : `${targetBingo}줄 빙고`;
 
 export const InvitationScreen = () => {
   const router = useRouter();
+  const room = useCreateRoomStore((state) => state.createdRoom);
+  const resetCreateRoom = useCreateRoomStore((state) => state.reset);
   const [copyResult, setCopyResult] = useState<"success" | "failure" | null>(
     null
   );
   const timerRef = useRef<number | null>(null);
+
+  // 새로고침 등으로 생성된 방 정보가 없으면 홈으로 보낸다.
+  useEffect(() => {
+    if (!room) router.replace("/home");
+  }, [room, router]);
 
   useEffect(() => {
     return () => {
@@ -38,23 +46,31 @@ export const InvitationScreen = () => {
     }, TOAST_DURATION_MS);
   };
 
+  const handleClose = () => {
+    resetCreateRoom();
+    router.replace("/home");
+  };
+
   const handleCopy = async () => {
+    if (!room) return;
     try {
       if (!navigator.clipboard?.writeText)
         throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(MOCK_INVITATION.inviteUrl);
+      await navigator.clipboard.writeText(room.invite_url);
       showCopyResult("success");
     } catch {
       showCopyResult("failure");
     }
   };
 
+  if (!room) return null;
+
   return (
     <main className="bg-bg-normal text-text-primary flex min-h-dvh flex-col">
       <header className="relative flex h-13 shrink-0 items-center justify-center px-5">
         <button
           type="button"
-          onClick={() => router.push("/home")}
+          onClick={handleClose}
           aria-label="초대장 닫기"
           className="focus-visible:outline-primary-normal absolute left-5 flex size-8 items-center justify-center text-lg font-semibold focus-visible:outline-2"
         >
@@ -87,7 +103,7 @@ export const InvitationScreen = () => {
                 친구들을 초대하고 함께 빙고판을 채워보세요
               </p>
               <h2 className="mt-1 text-[1.375rem] leading-[1.4] font-bold tracking-tight">
-                {MOCK_INVITATION.roomName}
+                {room.room_name}
               </h2>
             </div>
           </div>
@@ -97,19 +113,19 @@ export const InvitationScreen = () => {
               <div className="flex items-center justify-between">
                 <span className="body5 text-text-secondary-1">방 인원수</span>
                 <span className="body4 text-primary-normal font-bold">
-                  {MOCK_INVITATION.memberCount}명
+                  {room.max_members}명
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="body5 text-text-secondary-1">목표 빙고</span>
                 <span className="body4 font-semibold">
-                  {MOCK_INVITATION.targetBingo}줄 빙고
+                  {getTargetBingoLabel(room.target_bingo)}
                 </span>
               </div>
               <input
                 aria-label="초대 링크"
                 readOnly
-                value={MOCK_INVITATION.inviteUrl}
+                value={room.invite_url}
                 onFocus={(event) => event.currentTarget.select()}
                 className="body5 border-border-1 bg-bg-normal text-text-secondary-1 focus-visible:outline-primary-normal mt-1 h-11 w-full min-w-0 rounded-xl border px-4 focus-visible:outline-2"
               />

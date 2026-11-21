@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BottomButton } from "@/components/common/BottomButton";
@@ -7,15 +8,30 @@ import { Header } from "@/components/common/Header";
 import { CreateRoomGoalField } from "@/components/rooms/CreateRoomGoalField";
 import { CreateRoomHeadcountField } from "@/components/rooms/CreateRoomHeadcountField";
 import { CreateRoomNameField } from "@/components/rooms/CreateRoomNameField";
-import { ROOM_DEFAULT_MEMBERS } from "@/constants/room";
+import {
+  ROOM_DEFAULT_MEMBERS,
+  TARGET_BINGO_API_VALUES,
+} from "@/constants/room";
+import { useCreateRoomStore } from "@/stores/createRoom";
 import type { TargetBingo } from "@/types/room";
 
 const CreateRoomPage = () => {
+  const router = useRouter();
   const [roomName, setRoomName] = useState("");
   const [memberCount, setMemberCount] = useState(ROOM_DEFAULT_MEMBERS);
   const [targetBingo, setTargetBingo] = useState<TargetBingo>(1);
+  const setDraft = useCreateRoomStore((state) => state.setDraft);
 
   const isSubmittable = roomName.trim().length > 0;
+
+  const handleSubmit = () => {
+    setDraft({
+      room_name: roomName.trim(),
+      max_members: memberCount,
+      target_bingo: TARGET_BINGO_API_VALUES[targetBingo],
+    });
+    router.push("/preferences");
+  };
 
   return (
     <main className="bg-bg-normal flex h-dvh flex-col">
@@ -40,7 +56,9 @@ const CreateRoomPage = () => {
       </div>
 
       <footer className="border-border-1 border-t px-5 pt-4 pb-8">
-        <BottomButton disabled={!isSubmittable}>빙고판 만들기</BottomButton>
+        <BottomButton disabled={!isSubmittable} onClick={handleSubmit}>
+          빙고판 만들기
+        </BottomButton>
       </footer>
     </main>
   );
