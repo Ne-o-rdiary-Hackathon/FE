@@ -1,3 +1,5 @@
-const RoomDetailPage = () => <main className="bg-bg-normal min-h-dvh" />;
+import { BingoScreen } from "@/components/bingo/BingoScreen";
+
+const RoomDetailPage = () => <BingoScreen />;
 
 export default RoomDetailPage;

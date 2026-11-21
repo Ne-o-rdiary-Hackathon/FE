@@ -42,6 +42,9 @@
   /* bg */
   --color-bg-gray: #f6f7f9;
   --color-bg-normal: #ffffff;
+  --color-bingo-summary: #f8f8fa;
+  --color-bingo-cell: #fff1eb;
+  --color-bingo-muted: #666666;
 
   /* border */
   --color-border-1: #e9e9ea;
